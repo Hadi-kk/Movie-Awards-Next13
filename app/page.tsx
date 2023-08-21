@@ -1,95 +1,91 @@
-import Image from 'next/image'
-import styles from './page.module.css'
+"use client"
+import React from 'react';
+import BallotCategory from '@/components/BallotCategory';
+import BallotModal from '@/components/BallotModal';
+
+interface BallotItem {
+  title: string;
+  photoUrL: string;
+  id: string;
+}
+
+interface BallotCategoryData {
+  id: string;
+  items: BallotItem[];
+  title: string;
+}
+
+const BallotPage: React.FC = () => {
+  const [ballotData, setBallotData] = React.useState<BallotCategoryData[]>([]);
+  const [selectedNominees, setSelectedNominees] = React.useState<{ [category: string]: string }>(
+    {}
+  );
+  const [showModal, setShowModal] = React.useState(false);
+
+  React.useEffect(() => {
+    fetchBallotData();
+  }, []);
+
+  const fetchBallotData = async () => {
+    try {
+      const response = await fetch('http://localhost:3000/api/ballots');
+      if (!response.ok) {
+        throw new Error('Failed to fetch ballot data');
+      }
+      const data: { items: BallotCategoryData[] } = await response.json();
+      setBallotData(data.items);
+    } catch (error) {
+      console.error('Error fetching ballot data:', error);
+    }
+  };
+
+  const handleNomineeSelect = (category: string, nomineeId: string) => {
+    setSelectedNominees((prevSelections) => ({
+      ...prevSelections,
+      [category]: nomineeId,
+    }));
+  };
+
+  const handleSubmit = () => {
+    console.log('Selected Nominees:', selectedNominees);
+    setShowModal(true);
+  };
+
+  const closeModal = () => {
+    setShowModal(false);
+    setSelectedNominees({});
+  };
+
+  return (
+    <main>
+      <div className="ballot-page">
+        <h1 className="title">Movie Awards Ballot</h1>
+        {ballotData.map((category) => (
+          <BallotCategory
+            key={category.id}
+            title={category.title}
+            nominees={category.items}
+            selectedNomineeId={selectedNominees[category.id] || null}
+            onNomineeSelect={(nomineeId) => handleNomineeSelect(category.id, nomineeId)}
+          />
+        ))}
+        <button className="ballot-submit-button" onClick={handleSubmit}>
+          Submit
+        </button>
+      </div>
+      {showModal && (
+        <BallotModal
+          nominees={Object.keys(selectedNominees).map((category) => ({
+            category,
+            nominee: selectedNominees[category],
+          }))}
+          onClose={closeModal}
+        />
+      )}
+    </main>
+  );
+};
 
 export default function Home() {
-  return (
-    <main className={styles.main}>
-      <div className={styles.description}>
-        <p>
-          Get started by editing&nbsp;
-          <code className={styles.code}>app/page.tsx</code>
-        </p>
-        <div>
-          <a
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{' '}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className={styles.vercelLogo}
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
-        </div>
-      </div>
-
-      <div className={styles.center}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
-
-      <div className={styles.grid}>
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Docs <span>-&gt;</span>
-          </h2>
-          <p>Find in-depth information about Next.js features and API.</p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Learn <span>-&gt;</span>
-          </h2>
-          <p>Learn about Next.js in an interactive course with&nbsp;quizzes!</p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Templates <span>-&gt;</span>
-          </h2>
-          <p>Explore the Next.js 13 playground.</p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Deploy <span>-&gt;</span>
-          </h2>
-          <p>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
-    </main>
-  )
+  return <BallotPage />;
 }
